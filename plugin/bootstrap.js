@@ -1,4 +1,4 @@
-/* Journal Issue Splitter: Zotero 7 and 8 bootstrap. */
+/* Journal Issue Splitter: bootstrap for Zotero 7 through 10. */
 var rootURI;
 var menuID = null;
 var PLUGIN_ID = "journal-issue-splitter@nshepard";
@@ -9,7 +9,8 @@ function uninstall() {}
 
 async function startup({ id, version, rootURI: uri }) {
   rootURI = uri;
-  // Zotero 8+: register the item context menu through MenuManager.
+  // Zotero 8 and later: register the item context menu through MenuManager.
+  // Zotero 10 also removes these menu elements itself when the plugin shuts down.
   if (Zotero.MenuManager?.registerMenu) {
     menuID = Zotero.MenuManager.registerMenu({
       menuID: "journal-issue-splitter",
@@ -24,7 +25,8 @@ async function startup({ id, version, rootURI: uri }) {
             context.setVisible(items.length === 1 && isCandidate(items[0]));
           },
           onCommand: (event, context) => {
-            const win = Zotero.getMainWindow();
+            // Use the window the menu was opened in, not just the first main window.
+            const win = event?.target?.ownerGlobal || Zotero.getMainWindow();
             win.ZoteroIssueSplitter?.splitIssue(win, context.items[0]);
           },
         },

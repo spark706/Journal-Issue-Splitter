@@ -20,15 +20,15 @@ There are two ways to use it. Both share the same core code in `src/`.
 5. Cross-checks the paper count against the table of contents, and lists any TOC start pages with no DOI in the PDF.
 6. Optionally checks Crossref for the same ISSN, volume, and issue. It reports items Crossref has that the PDF lacks, and uses Crossref page counts to trim trailing pages.
 
-## Zotero plugin (Zotero 7 or 8)
+## Zotero plugin (Zotero 7 through 10)
 
 Install:
 1. In Zotero, open **Tools > Plugins**.
-2. Click the gear icon, choose **Install Plugin From File…**, and select `journal-issue-splitter-0.2.0.xpi`.
+2. Click the gear icon, choose **Install Plugin From File…**, and select `journal-issue-splitter-0.3.0.xpi`.
 
 Use:
 1. Import a full-issue PDF into Zotero (drag it in, or use an existing item that has it attached).
-2. Optional: select a collection first. The new issue collection is created inside it.
+2. Optional: select one collection first. The new issue collection is created inside it. If several collections are selected (Zotero 10), it is created at the top level of the library.
 3. Right-click the PDF (or its parent item) and choose **Split Journal Issue into Papers…**.
 4. Review the confirmation (paper count, TOC count, Crossref check, duplicates, warnings), then click OK.
 

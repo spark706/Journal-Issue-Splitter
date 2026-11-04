@@ -28,7 +28,7 @@ const Zotero = {
     setIdentifier(x) { this.doi = x.DOI; } async getTranslators() { return [{}]; } setTranslator() {}
     async translate(o) { if (this.doi === failDoi) throw new Error("404"); const it = new FakeItem(); it.setField("title", "T " + this.doi); it.colls = o.collections; return [it]; } } },
   Item: FakeItem,
-  Collection: class { constructor() { this.id = 500; } async saveTx() { log.push("collection: " + this.name); } },
+  Collection: class { constructor() { this.id = 500; } async saveTx() { log.push(`collection: ${this.name} (parentID ${this.parentID ?? "none"})`); } },
   Attachments: { importFromFile: async (o) => { const b = fs.readFileSync(o.file); attachments.push({ parent: o.parentItemID, bytes: b.length, file: path.basename(o.file) }); } },
   ProgressWindow: class { constructor() { const self = this; this.ItemProgress = class { setText(t) { self.last = t; } setProgress() {} setError() { log.push("progress error"); } }; } changeHeadline() {} show() {} startCloseTimer() { log.push("progress: " + this.last); } },
 };
@@ -40,7 +40,21 @@ const crossrefPages = { "10.1109/tsg.2017.2668381": "5482-5493" };
 const fetch = async (url) => ({ ok: true, json: async () => ({ message: { "next-cursor": "x", items: url.includes("cursor=*") ? [
   { DOI: "10.1109/tsg.2017.2668381", title: ["Bifurcation Analysis"], volume: "9", issue: "6", page: crossrefPages["10.1109/tsg.2017.2668381"] },
   { DOI: "10.1109/tsg.2017.2720683", title: ["Not in excerpt"], volume: "9", issue: "6", page: "6721-6730" }] : [] } }) });
-const win = { ZoteroPane: { getSelectedCollection: () => null } };
+// SIM_PANE picks which collection-selection API the fake window offers:
+//   z7    - only getSelectedCollection() (Zotero 7 to 9)
+//   z10-1 - getSelectedCollections() with one collection selected
+//   z10-2 - getSelectedCollections() with two selected; getSelectedCollection() throws, as in Zotero 10
+const parent = { id: 42, libraryID: 1 };
+const panes = {
+  z7: { getSelectedCollection: () => parent },
+  "z10-1": { getSelectedCollections: () => [parent], getSelectedCollection: () => parent },
+  "z10-2": {
+    getSelectedCollections: () => [parent, { id: 43, libraryID: 1 }],
+    getSelectedCollection: () => { throw new Error("ZoteroPane.getSelectedCollection() was removed -- use ZoteroPane.getSelectedCollections()"); },
+  },
+};
+const mode = process.env.SIM_PANE || "z10-2";
+const win = { ZoteroPane: panes[mode] };
 const webGlobals = ["setTimeout","clearTimeout","setInterval","clearInterval","queueMicrotask","console","TextDecoder","TextEncoder","URL","structuredClone",
   "ReadableStream","WritableStream","TransformStream","Blob","DOMException","AbortController","MessageChannel","Response","Request","Headers","performance","atob","btoa","Event","EventTarget"];
 const ctx = vm.createContext({ Zotero, Services, IOUtils, PathUtils, fetch });

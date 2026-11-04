@@ -2,7 +2,7 @@
 // ISSN + volume + issue, with titles and page ranges. Used to cross-check
 // what was found in the PDF and to tighten split page ranges.
 
-const UA = "zotero-issue-splitter/0.2 (Zotero plugin; Crossref issue check)";
+const UA = "zotero-issue-splitter/0.3 (Zotero plugin; Crossref issue check)";
 
 export async function fetchIssueFromCrossref({ issn, volume, number, year }, fetchFn = fetch) {
   if (!issn || !volume || !number || !year) {

@@ -79,6 +79,22 @@ function titleCase(s) {
     .replace(/\b(On|Of|And|For|In|The)\b/g, (w) => w.toLowerCase());
 }
 
+/**
+ * The one selected collection, or null.
+ * Zotero 10 allows several collections to be selected, and its
+ * getSelectedCollection() throws when more than one is. Use
+ * getSelectedCollections() where it exists and only nest the new collection
+ * when exactly one collection is selected.
+ */
+function getSingleSelectedCollection(pane) {
+  if (!pane) return null;
+  if (typeof pane.getSelectedCollections === "function") {
+    const all = pane.getSelectedCollections() || [];
+    return all.length === 1 ? all[0] : null;
+  }
+  return pane.getSelectedCollection?.() || null;
+}
+
 async function createIssueCollection(win, info, fallbackName, libraryID) {
   const parts = [];
   if (info.journal) parts.push(titleCase(info.journal));
@@ -86,7 +102,7 @@ async function createIssueCollection(win, info, fallbackName, libraryID) {
   if (info.month || info.year) parts.push([info.month && titleCase(info.month), info.year].filter(Boolean).join(" "));
   const name = parts.length ? parts.join(" ") : fallbackName;
 
-  const selected = win.ZoteroPane.getSelectedCollection?.();
+  const selected = getSingleSelectedCollection(win.ZoteroPane);
   const coll = new Zotero.Collection();
   coll.libraryID = libraryID;
   coll.name = name;
