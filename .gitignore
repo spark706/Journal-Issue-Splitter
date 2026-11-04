@@ -1,0 +1,7 @@
+node_modules/
+dist/
+test/in/
+test/out/
+test/sim-out.txt
+test/fixture-issue.pdf
+plugin/content/issue-splitter.js

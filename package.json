@@ -1,0 +1,19 @@
+{
+  "name": "zotero-issue-splitter",
+  "version": "0.2.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test test/core.test.mjs",
+    "build": "node build-plugin.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "esbuild": "^0.28.2",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38"
+  },
+  "type": "module"
+}
