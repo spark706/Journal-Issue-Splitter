@@ -13,9 +13,14 @@ class FakeItem {
   isRegularItem() { return this.type !== "attachment"; } getAttachments() { return []; }
   setField(k, v) { this.fields[k] = v; } getField(k) { return this.fields[k] ?? ""; }
   addTag(t) { this.tags.push(t); } setCollections(c) { this.colls = c; }
-  isInCollection(id) { return this.colls.includes(id); } addToCollection(id) { this.colls.push(id); }
+  inCollection(id) { return this.colls.includes(id); } addToCollection(id) { if (!this.colls.includes(id)) this.colls.push(id); log.push(`existing item ${this.id} added to collection ${id}`); }
   async saveTx() { } async getFilePathAsync() { return fixture; }
 }
+// Calling a method that this fake does not define throws, as it would in Zotero,
+// instead of silently passing.
+const strict = (obj) => new Proxy(obj, { get(t, k) {
+  if (typeof k === "string" && !(k in t) && /^[a-z]/.test(k) && !["then","toJSON"].includes(k)) throw new TypeError(`${k} is not a function (not on Zotero.Item)`);
+  return t[k]; } });
 const issueAtt = new FakeItem("attachment"); issueAtt.setField("title", "issue.pdf");
 const existingDoi = "10.1109/TSG.2017.2680436";
 const failDoi = "10.1109/TSG.2017.2690360";
@@ -23,11 +28,16 @@ const Zotero = {
   debug: (m) => log.push("debug: " + m),
   Prefs: { get: () => undefined },
   Search: class { addCondition(f, op, v) { this.v = v; } async search() { return this.v === existingDoi ? [999] : []; } },
-  Items: { get: (id) => { const it = new FakeItem(); it.id = id; return it; } },
+  Items: { get: (id) => { const it = new FakeItem(); it.id = id; return strict(it); } },
   Translate: { Search: class {
     setIdentifier(x) { this.doi = x.DOI; } async getTranslators() { return [{}]; } setTranslator() {}
     async translate(o) { if (this.doi === failDoi) throw new Error("404"); const it = new FakeItem(); it.setField("title", "T " + this.doi); it.colls = o.collections; return [it]; } } },
   Item: FakeItem,
+  // SIM_RERUN=1: a collection for this issue already exists, as after an interrupted split.
+  Collections: (() => {
+    const prior = process.env.SIM_RERUN ? [{ id: 777, name: "IEEE Transactions on Smart Grid 9(6) November 2018", deleted: false }] : [];
+    return { getByLibrary: () => prior, getByParent: () => prior };
+  })(),
   Collection: class { constructor() { this.id = 500; } async saveTx() { log.push(`collection: ${this.name} (parentID ${this.parentID ?? "none"})`); } },
   Attachments: { importFromFile: async (o) => { const b = fs.readFileSync(o.file); attachments.push({ parent: o.parentItemID, bytes: b.length, file: path.basename(o.file) }); } },
   ProgressWindow: class { constructor() { const self = this; this.ItemProgress = class { setText(t) { self.last = t; } setProgress() {} setError() { log.push("progress error"); } }; } changeHeadline() {} show() {} startCloseTimer() { log.push("progress: " + this.last); } },
@@ -69,4 +79,5 @@ vm.runInContext(fs.readFileSync("plugin/content/issue-splitter.js", "utf8"), ctx
 await ctx.ZoteroIssueSplitter.splitIssue(win, issueAtt);
 console.log(log.filter((l) => !l.startsWith("debug")).join("\n---\n"));
 console.log("debug lines:", log.filter((l) => l.startsWith("debug")));
+console.log("collections saved:", log.filter((l) => l.startsWith("collection:")).length);
 console.log("attachments:", attachments.length, attachments.slice(0, 3));

@@ -24,7 +24,7 @@ There are two ways to use it. Both share the same core code in `src/`.
 
 Install:
 1. In Zotero, open **Tools > Plugins**.
-2. Click the gear icon, choose **Install Plugin From File…**, and select `journal-issue-splitter-0.3.0.xpi`.
+2. Click the gear icon, choose **Install Plugin From File…**, and select `journal-issue-splitter-0.3.1.xpi`.
 
 Use:
 1. Import a full-issue PDF into Zotero (drag it in, or use an existing item that has it attached).

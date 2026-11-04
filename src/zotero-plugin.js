@@ -103,10 +103,20 @@ async function createIssueCollection(win, info, fallbackName, libraryID) {
   const name = parts.length ? parts.join(" ") : fallbackName;
 
   const selected = getSingleSelectedCollection(win.ZoteroPane);
+  const parent = selected && selected.libraryID === libraryID ? selected : null;
+
+  // Re-running on the same issue (for example, after an interrupted split)
+  // reuses the collection with the same name in the same place.
+  const siblings = parent
+    ? Zotero.Collections.getByParent?.(parent.id)
+    : Zotero.Collections.getByLibrary?.(libraryID);
+  const same = (siblings || []).find((c) => c.name === name && !c.deleted);
+  if (same) return same;
+
   const coll = new Zotero.Collection();
   coll.libraryID = libraryID;
   coll.name = name;
-  if (selected && selected.libraryID === libraryID) coll.parentID = selected.id;
+  if (parent) coll.parentID = parent.id;
   await coll.saveTx();
   return coll;
 }
@@ -205,7 +215,9 @@ async function splitIssue(win, selectedItem) {
       if (existingSet.has(normalizeDoi(p.doi))) {
         skipped++;
         const old = await findExistingByDoi(libraryID, p.doi);
-        if (old && !old.isInCollection(coll.id)) {
+        // Zotero.Item has inCollection(), not isInCollection(). addToCollection()
+        // is a no-op when the item is already there, so no check is needed.
+        if (old) {
           old.addToCollection(coll.id);
           await old.saveTx();
         }
